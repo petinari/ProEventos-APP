@@ -1,9 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, TemplateRef } from '@angular/core';
-import { Evento } from '../models/Evento';
-import { EventoService } from '../services/Evento.service';
+import { Evento } from '../../models/Evento';
+import { EventoService } from '../../services/Evento.service';
 import { BsModalService, BsModalRef } from 'ngx-bootstrap/modal';
 import { ToastrService } from 'ngx-toastr';
+import { NgxSpinnerService } from 'ngx-spinner';
 
 @Component({
   selector: 'app-eventos',
@@ -19,11 +20,10 @@ export class EventosComponent implements OnInit {
 
   decline() {
     this.modalRef?.hide();
-    this.toastr.success('Hello world!', 'Toastr fun!');
   }
   confirm() {
     this.modalRef?.hide();
-    this.toastr.success('Hello world!', 'Toastr fun!');
+    this.toastr.success('O evento foi deletado com sucesso.');
   }
   eventoFiltrados: Evento[] = [];
 
@@ -54,10 +54,14 @@ export class EventosComponent implements OnInit {
   constructor(
     private eventoService: EventoService,
     private modalService: BsModalService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private spinner: NgxSpinnerService
   ) {}
 
   public ngOnInit() {
+    /** spinner starts on init */
+    this.spinner.show();
+
     this.GetEventos();
   }
 
@@ -66,13 +70,17 @@ export class EventosComponent implements OnInit {
   }
 
   public GetEventos(): void {
-    this.eventoService.getEventos().subscribe(
-      (_eventos: Evento[]) => {
+    this.eventoService.getEventos().subscribe({
+      next: (_eventos: Evento[]) => {
         this.eventos = _eventos;
         this.eventoFiltrados = this.eventos;
         console.log(_eventos);
       },
-      (error) => console.log(error)
-    );
+      error: (error) => {
+        this.spinner.hide();
+        this.toastr.error('Erro ao carregar os eventos.');
+      },
+      complete: () => this.spinner.hide(),
+    });
   }
 }
